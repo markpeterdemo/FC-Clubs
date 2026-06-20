@@ -26,11 +26,11 @@ export function Dropdown({ trigger, children, align = "left", className }: Dropd
 
   return (
     <div ref={ref} className={cn("relative", className)}>
-      <div onClick={() => setOpen(!open)}>{trigger}</div>
+      <div onClick={() => setOpen(!open)} className="cursor-pointer">{trigger}</div>
       {open && (
         <div
           className={cn(
-            "absolute z-50 mt-1 w-56 rounded-lg border border-border bg-card py-1 shadow-xl animate-fade-in",
+            "absolute z-50 mt-1.5 w-56 rounded-xl border border-border glass shadow-elevated py-1 animate-scale-in origin-top",
             align === "right" ? "right-0" : "left-0"
           )}
           onClick={() => setOpen(false)}
@@ -54,7 +54,7 @@ export function DropdownItem({ children, onClick, danger, className }: DropdownI
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-surface-2",
+        "flex w-full items-center gap-2.5 px-3 py-2.5 text-sm transition-all duration-200 hover:bg-surface-2/60 first:rounded-t-lg last:rounded-b-lg",
         danger ? "text-red-400 hover:text-red-300" : "text-text-primary",
         className
       )}

@@ -38,15 +38,15 @@ export function Select({ value, onChange, options, placeholder = "Select...", cl
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary transition-colors hover:border-border-light"
+        className="flex w-full items-center justify-between rounded-xl border border-border bg-surface-2/50 px-3.5 py-2.5 text-sm text-text-primary transition-all duration-200 hover:border-border-light hover:bg-surface-2 backdrop-blur-sm"
       >
         <span className={cn(!selected && "text-text-muted")}>
           {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown size={16} className={cn("text-text-muted transition-transform", open && "rotate-180")} />
+        <ChevronDown size={16} className={cn("text-text-muted transition-all duration-200", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card py-1 shadow-xl animate-fade-in">
+        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-border glass py-1 shadow-elevated animate-scale-in origin-top">
           {options.map((option) => (
             <button
               key={option.value}
@@ -56,8 +56,10 @@ export function Select({ value, onChange, options, placeholder = "Select...", cl
                 setOpen(false);
               }}
               className={cn(
-                "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2",
-                option.value === value ? "text-pitch-400" : "text-text-primary"
+                "w-full px-3.5 py-2 text-left text-sm transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
+                option.value === value
+                  ? "text-pitch-400 bg-pitch-500/5"
+                  : "text-text-primary hover:bg-surface-2/50"
               )}
             >
               {option.label}
@@ -102,18 +104,18 @@ export function PositionSelect({ value, onChange, className, label }: PositionSe
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary transition-colors hover:border-border-light"
+        className="flex w-full items-center justify-between rounded-xl border border-border bg-surface-2/50 px-3.5 py-2.5 text-sm text-text-primary transition-all duration-200 hover:border-border-light hover:bg-surface-2 backdrop-blur-sm"
       >
         <span className={cn(!value && "text-text-muted")}>
           {value || "Select position..."}
         </span>
-        <ChevronDown size={16} className={cn("text-text-muted transition-transform", open && "rotate-180")} />
+        <ChevronDown size={16} className={cn("text-text-muted transition-all duration-200", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card py-1 shadow-xl animate-fade-in max-h-72 overflow-y-auto">
+        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-border glass py-1 shadow-elevated animate-scale-in origin-top max-h-72 overflow-y-auto">
           {groups.map((group) => (
             <div key={group.label}>
-              <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <div className="px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 {group.label}
               </div>
               {group.positions.map((pos) => (
@@ -125,8 +127,10 @@ export function PositionSelect({ value, onChange, className, label }: PositionSe
                     setOpen(false);
                   }}
                   className={cn(
-                    "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-surface-2",
-                    value === pos ? "text-pitch-400" : "text-text-primary"
+                    "w-full px-3.5 py-2 text-left text-sm transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
+                    value === pos
+                      ? "text-pitch-400 bg-pitch-500/5"
+                      : "text-text-primary hover:bg-surface-2/50"
                   )}
                 >
                   {pos}

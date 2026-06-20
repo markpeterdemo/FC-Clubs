@@ -6,9 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PositionSelect } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Goal, Plus, Search, Users, Building2, ArrowLeft } from "lucide-react";
+import { Goal, Search, Building2, ArrowLeft } from "lucide-react";
 
 export default function JoinPage() {
   const { user, loading } = useAuth();
@@ -117,10 +116,12 @@ export default function JoinPage() {
         {step === "choice" && (
           <>
             <div className="mb-8 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-pitch-600">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pitch-500 to-pitch-700 shadow-lg shadow-pitch-500/25">
                 <Goal size={28} className="text-white" />
               </div>
-              <h1 className="text-2xl font-bold">Welcome to Matchday!</h1>
+              <h1 className="text-2xl font-bold">
+                Welcome to <span className="text-gradient">Matchday</span>
+              </h1>
               <p className="mt-1 text-text-secondary">
                 You're not part of a club yet. Let's get you started.
               </p>
@@ -129,12 +130,13 @@ export default function JoinPage() {
             <div className="grid gap-4">
               <button
                 onClick={() => setStep("create")}
-                className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-pitch-600/50 hover:shadow-lg"
+                className="group relative overflow-hidden flex items-center gap-4 rounded-2xl border border-border glass p-5 text-left transition-all duration-300 hover:border-pitch-500/30 hover:shadow-glow hover:-translate-y-0.5"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-pitch-900/30 group-hover:bg-pitch-900/50 transition-colors">
+                <div className="absolute inset-0 bg-gradient-to-r from-pitch-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pitch-500/20 to-pitch-700/20 group-hover:from-pitch-500/30 group-hover:to-pitch-700/30 transition-all duration-300 ring-1 ring-pitch-500/10 group-hover:ring-pitch-500/20">
                   <Building2 size={24} className="text-pitch-400" />
                 </div>
-                <div>
+                <div className="relative">
                   <h3 className="font-semibold">Create a Club</h3>
                   <p className="text-sm text-text-secondary">Become a captain and build your team</p>
                 </div>
@@ -142,14 +144,15 @@ export default function JoinPage() {
 
               <button
                 onClick={() => setStep("join")}
-                className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-pitch-600/50 hover:shadow-lg"
+                className="group relative overflow-hidden flex items-center gap-4 rounded-2xl border border-border glass p-5 text-left transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_24px_rgba(59,130,246,0.12)] hover:-translate-y-0.5"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-900/30 group-hover:bg-blue-900/50 transition-colors">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-700/20 group-hover:from-blue-500/30 group-hover:to-blue-700/30 transition-all duration-300 ring-1 ring-blue-500/10 group-hover:ring-blue-500/20">
                   <Search size={24} className="text-blue-400" />
                 </div>
-                <div>
-                  <h3 className="font-semibold">Join a Club</h3>
-                  <p className="text-sm text-text-secondary">Find a team and request to join</p>
+                <div className="relative">
+                  <h3 className="font-semibold">Find a Club</h3>
+                  <p className="text-sm text-text-secondary">Search for a team and request to join</p>
                 </div>
               </button>
             </div>
@@ -160,15 +163,15 @@ export default function JoinPage() {
           <>
             <button
               onClick={() => setStep("choice")}
-              className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+              className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-all duration-200 group"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
               Back
             </button>
 
             <h2 className="mb-6 text-xl font-bold">Create Your Club</h2>
 
-            <div className="space-y-5 rounded-xl border border-border bg-card p-6">
+            <div className="space-y-5 rounded-2xl border border-border glass p-6 shadow-elevated">
               <Input
                 label="Club Name"
                 placeholder="e.g. FC Barcelona"
@@ -193,18 +196,20 @@ export default function JoinPage() {
                     type="color"
                     value={clubColor}
                     onChange={(e) => setClubColor(e.target.value)}
-                    className="h-10 w-14 cursor-pointer rounded-lg border border-border bg-transparent"
+                    className="h-10 w-14 cursor-pointer rounded-xl border border-border bg-transparent"
                   />
-                  <span className="text-sm text-text-muted">{clubColor}</span>
+                  <span className="text-sm text-text-muted font-mono">{clubColor}</span>
                 </div>
               </div>
 
               <PositionSelect
                 value={position}
                 onChange={setPosition}
+                label="Your Position"
               />
 
               <Button
+                variant="premium"
                 onClick={handleCreateClub}
                 disabled={creating || !clubName || !position}
                 className="w-full"
@@ -219,15 +224,15 @@ export default function JoinPage() {
           <>
             <button
               onClick={() => setStep("choice")}
-              className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+              className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-all duration-200 group"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
               Back
             </button>
 
             <h2 className="mb-6 text-xl font-bold">Join a Club</h2>
 
-            <div className="mb-6 space-y-5 rounded-xl border border-border bg-card p-6">
+            <div className="mb-6 space-y-5 rounded-2xl border border-border glass p-6 shadow-elevated">
               <PositionSelect
                 label="Your Position"
                 value={position}
@@ -235,16 +240,19 @@ export default function JoinPage() {
               />
             </div>
 
-            <Input
-              placeholder="Search clubs by name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="mb-4"
-            />
+            <div className="relative mb-4">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+              <Input
+                placeholder="Search clubs by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
 
             {searching && (
-              <div className="flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+              <div className="flex items-center justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
               </div>
             )}
 
@@ -252,11 +260,11 @@ export default function JoinPage() {
               {searchResults.map((club: any) => (
                 <div
                   key={club.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-border-light"
+                  className="group flex items-center justify-between rounded-2xl border border-border glass p-4 transition-all duration-300 hover:border-border-light hover:shadow-elevated"
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
                       style={{ backgroundColor: club.primary_color }}
                     >
                       {club.short_name || club.name.slice(0, 3).toUpperCase()}
@@ -271,6 +279,7 @@ export default function JoinPage() {
                   </div>
                   <Button
                     size="sm"
+                    variant={club.visibility === "public" ? "primary" : "secondary"}
                     onClick={() => handleJoinClub(club.id)}
                     disabled={!position}
                   >
@@ -280,15 +289,19 @@ export default function JoinPage() {
               ))}
 
               {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-                <p className="py-8 text-center text-text-muted">
-                  No clubs found matching "{searchQuery}"
-                </p>
+                <div className="py-12 text-center">
+                  <p className="text-text-muted">
+                    No clubs found matching "<span className="text-text-secondary font-medium">{searchQuery}</span>"
+                  </p>
+                </div>
               )}
 
               {searchQuery.length < 2 && (
-                <p className="py-8 text-center text-text-muted">
-                  Type at least 2 characters to search
-                </p>
+                <div className="py-12 text-center">
+                  <p className="text-text-muted">
+                    Type at least 2 characters to search
+                  </p>
+                </div>
               )}
             </div>
           </>

@@ -15,7 +15,7 @@ export function DiscordAvatar({ discordId, avatarHash, size = 40, className }: D
     <img
       src={src}
       alt=""
-      className={cn("rounded-full shrink-0", className)}
+      className={cn("rounded-full shrink-0 ring-2 ring-border transition-all duration-300 hover:ring-pitch-500/30", className)}
       width={size}
       height={size}
       style={{ width: size, height: size }}
