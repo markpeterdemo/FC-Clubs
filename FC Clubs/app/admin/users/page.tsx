@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { DiscordAvatar } from "@/components/ui/avatar";
-import { Search, Shield, ShieldOff, Ban, CheckCircle2 } from "lucide-react";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Shield, ShieldOff, Ban, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface AdminUser {
   id: string;
@@ -102,97 +106,103 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSearch} className="flex gap-3">
-        <div className="flex-1">
-          <Input
-            placeholder="Search by username, name, or Discord ID..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        <Button type="submit">
-          <Search size={16} />
-          Search
-        </Button>
-      </form>
-
-      <p className="text-sm text-text-muted">{total} user{total !== 1 ? "s" : ""}</p>
-
-      <div className="space-y-2">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
-          </div>
-        ) : (
-          users.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
-            >
-              <DiscordAvatar discordId={user.discord_id} avatarHash={user.avatar} size={40} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{user.global_name || user.username}</span>
-                  {user.is_admin && <Badge variant="warning">Admin</Badge>}
-                  {user.banned && <Badge variant="danger">Banned</Badge>}
-                </div>
-                <p className="text-sm text-text-muted">@{user.username}</p>
-                {user.club_name && (
-                  <p className="text-xs text-text-muted">
-                    {user.club_role} of {user.club_name}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleAdmin(user)}
-                  disabled={updating}
-                >
-                  {user.is_admin ? <ShieldOff size={16} /> : <Shield size={16} />}
-                  {user.is_admin ? "Remove Admin" : "Make Admin"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleBan(user)}
-                  disabled={updating}
-                  className={user.banned ? "text-pitch-400" : "text-red-400"}
-                >
-                  {user.banned ? <CheckCircle2 size={16} /> : <Ban size={16} />}
-                  {user.banned ? "Unban" : "Ban"}
-                </Button>
-              </div>
+    <PageTransition>
+      <StaggerContainer className="space-y-6" staggerDelay={0.04}>
+        <StaggerItem>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Users</h1>
+              <p className="text-text-secondary text-sm mt-0.5">Manage platform users</p>
             </div>
-          ))
-        )}
-      </div>
+            <span className="text-sm text-text-muted">{total} total</span>
+          </div>
+        </StaggerItem>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-text-muted">
-            Page {page} of {totalPages}
-          </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
-    </div>
+        <StaggerItem>
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+              <Input
+                placeholder="Search by username, name, or Discord ID..."
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button type="submit" variant="primary">Search</Button>
+          </form>
+        </StaggerItem>
+
+        <StaggerItem>
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-2xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {users.map((u, i) => (
+                <motion.div
+                  key={u.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.2 }}
+                >
+                  <Card variant="glass" padding="sm" className="flex items-center gap-4">
+                    <DiscordAvatar discordId={u.discord_id} avatarHash={u.avatar} size={40} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm">{u.global_name || u.username}</span>
+                        {u.is_admin && <Badge variant="warning">Admin</Badge>}
+                        {u.banned && <Badge variant="danger">Banned</Badge>}
+                      </div>
+                      <p className="text-xs text-text-muted">@{u.username}</p>
+                      {u.club_name && (
+                        <p className="text-xs text-text-muted mt-0.5">
+                          {u.club_role} of {u.club_name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button variant="ghost" size="sm" onClick={() => toggleAdmin(u)} disabled={updating}>
+                        {u.is_admin ? <ShieldOff size={16} /> : <Shield size={16} />}
+                        <span className="hidden sm:inline">{u.is_admin ? "Remove Admin" : "Make Admin"}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleBan(u)}
+                        disabled={updating}
+                        className={u.banned ? "text-pitch-400" : "text-red-400"}
+                      >
+                        {u.banned ? <CheckCircle2 size={16} /> : <Ban size={16} />}
+                        <span className="hidden sm:inline">{u.banned ? "Unban" : "Ban"}</span>
+                      </Button>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </StaggerItem>
+
+        {totalPages > 1 && (
+          <StaggerItem>
+            <div className="flex items-center justify-center gap-3">
+              <Button variant="secondary" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                <ChevronLeft size={14} />
+                Previous
+              </Button>
+              <span className="text-sm text-text-muted">Page {page} of {totalPages}</span>
+              <Button variant="secondary" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                Next
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </StaggerItem>
+        )}
+      </StaggerContainer>
+    </PageTransition>
   );
 }

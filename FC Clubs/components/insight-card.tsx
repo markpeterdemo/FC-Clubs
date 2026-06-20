@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Info, AlertCircle, Zap,
 } from "lucide-react";
@@ -18,10 +21,10 @@ interface InsightCardProps {
 }
 
 const typeStyles = {
-  positive: "border-pitch-600/30 bg-pitch-900/20",
-  negative: "border-red-600/30 bg-red-900/20",
-  neutral: "border-border bg-surface-2",
-  record: "border-yellow-600/30 bg-yellow-900/20",
+  positive: "border-pitch-500/30 bg-pitch-500/5",
+  negative: "border-red-500/30 bg-red-500/5",
+  neutral: "border-border bg-surface-2/50",
+  record: "border-yellow-500/30 bg-yellow-500/5",
 };
 
 const typeIcons = {
@@ -29,6 +32,13 @@ const typeIcons = {
   negative: TrendingDown,
   neutral: Info,
   record: Zap,
+};
+
+const typeColors = {
+  positive: "text-pitch-400",
+  negative: "text-red-400",
+  neutral: "text-text-muted",
+  record: "text-yellow-400",
 };
 
 export function InsightCard({ clubId, className }: InsightCardProps) {
@@ -45,42 +55,44 @@ export function InsightCard({ clubId, className }: InsightCardProps) {
 
   if (loading) {
     return (
-      <div className={cn("rounded-xl border border-border bg-card p-4", className)}>
-        <div className="h-4 w-32 animate-pulse rounded bg-surface-3 mb-3" />
+      <Card variant="default" padding="md" className={className}>
+        <Skeleton className="h-4 w-24 mb-3" />
         <div className="space-y-2">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-10 animate-pulse rounded-lg bg-surface-3" />
-          ))}
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (insights.length === 0) return null;
 
   return (
-    <div className={cn("rounded-xl border border-border bg-card p-4", className)}>
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+    <Card variant="elevated" padding="md" className={className}>
+      <CardTitle className="flex items-center gap-2 text-sm">
         <Zap size={16} className="text-yellow-400" />
         Insights
-      </h3>
-      <div className="space-y-2">
+      </CardTitle>
+      <CardContent className="mt-3 space-y-2">
         {insights.map((insight, i) => {
           const Icon = typeIcons[insight.type];
           return (
-            <div
+            <motion.div
               key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                "flex items-start gap-3 rounded-lg border p-3 text-sm",
+                "flex items-start gap-3 rounded-xl border p-3.5 text-sm transition-all hover:shadow-sm",
                 typeStyles[insight.type]
               )}
             >
-              <Icon size={16} className="mt-0.5 shrink-0 text-text-secondary" />
-              <span className="text-text-primary">{insight.message}</span>
-            </div>
+              <Icon size={16} className={cn("mt-0.5 shrink-0", typeColors[insight.type])} />
+              <span className="text-text-primary leading-relaxed">{insight.message}</span>
+            </motion.div>
           );
         })}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

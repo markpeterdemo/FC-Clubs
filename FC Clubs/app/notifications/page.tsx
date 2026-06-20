@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
 import {
   Bell,
   UserPlus,
@@ -80,7 +84,8 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <PageTransition>
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Notifications</h1>
@@ -102,24 +107,25 @@ export default function NotificationsPage() {
 
       {loadingData ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+          <Skeleton className="h-8 w-8 rounded-full" />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Card variant="glass" padding="lg" className="flex flex-col items-center justify-center py-12 text-center">
           <Bell size={40} className="mb-3 text-text-muted" />
           <p className="text-text-secondary">No notifications yet</p>
           <p className="text-sm text-text-muted">Activity will appear here</p>
-        </div>
+        </Card>
       ) : (
-        <div className="rounded-xl border border-border bg-card divide-y divide-border">
+        <Card variant="glass" padding="none" className="divide-y divide-border">
+          <StaggerContainer>
           {notifications.map((notif: any) => {
             const Icon = typeIcons[notif.type] || Bell;
             const colorClass = typeColors[notif.type] || "text-text-muted bg-surface-2";
             const isUnread = !notif.read_at;
 
             return (
+              <StaggerItem key={notif.id}>
               <div
-                key={notif.id}
                 className={cn(
                   "flex items-start gap-4 px-5 py-4 transition-colors",
                   isUnread ? "bg-pitch-900/10" : "hover:bg-surface-2"
@@ -151,10 +157,13 @@ export default function NotificationsPage() {
                   />
                 )}
               </div>
+              </StaggerItem>
             );
           })}
-        </div>
+          </StaggerContainer>
+        </Card>
       )}
     </div>
+    </PageTransition>
   );
 }

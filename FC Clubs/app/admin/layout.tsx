@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   LayoutDashboard,
   Users,
@@ -37,8 +38,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
@@ -51,7 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="space-y-1">
           <Link
             href="/dashboard"
-            className="mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-2 hover:text-text-primary"
+            className="mb-4 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-text-secondary transition-all duration-200 hover:bg-surface-2/50 hover:text-text-primary"
           >
             <ArrowLeft size={16} />
             Back to App
@@ -63,10 +65,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-pitch-900/30 text-pitch-400"
-                    : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+                    ? "bg-pitch-500/10 text-pitch-400 border border-pitch-500/20"
+                    : "text-text-secondary hover:bg-surface-2/50 hover:text-text-primary border border-transparent"
                 )}
               >
                 <link.icon size={18} />
@@ -78,7 +80,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
       <div className="min-w-0 flex-1">
         <div className="mb-6 flex items-center gap-3">
-          <Goal size={24} className="text-pitch-400" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-pitch-500 to-pitch-700 shadow-lg shadow-pitch-500/20">
+            <Goal size={20} className="text-white" />
+          </div>
           <div>
             <h1 className="text-xl font-bold">Admin Panel</h1>
             <p className="text-sm text-text-secondary">Site-wide management</p>

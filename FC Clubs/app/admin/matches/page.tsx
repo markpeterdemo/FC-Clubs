@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
 import { Swords, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -116,6 +120,7 @@ export default function AdminMatchesPage() {
   ];
 
   return (
+    <PageTransition>
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <Select
@@ -131,13 +136,16 @@ export default function AdminMatchesPage() {
       <div className="space-y-2">
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+            <Skeleton className="h-8 w-8 rounded-full" />
           </div>
         ) : (
-          matches.map((match) => (
-            <div
-              key={match.id}
-              className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
+          <StaggerContainer className="space-y-2">
+          {matches.map((match) => (
+            <StaggerItem key={match.id}>
+            <Card
+              variant="glass"
+              padding="md"
+              className="flex items-center gap-4"
             >
               <div className="flex flex-1 items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -195,8 +203,10 @@ export default function AdminMatchesPage() {
                   <Trash2 size={14} />
                 </Button>
               </div>
-            </div>
-          ))
+            </Card>
+            </StaggerItem>
+          ))}
+          </StaggerContainer>
         )}
       </div>
 
@@ -276,5 +286,6 @@ export default function AdminMatchesPage() {
         )}
       </Dialog>
     </div>
+    </PageTransition>
   );
 }

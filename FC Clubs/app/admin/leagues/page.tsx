@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
 import { toast } from "sonner";
 import { Plus, Trash2, CheckCircle2 } from "lucide-react";
 
@@ -96,13 +100,16 @@ export default function AdminLeaguesPage() {
 
   if (loading) {
     return (
+      <PageTransition>
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+        <Skeleton className="h-8 w-8 rounded-full" />
       </div>
+      </PageTransition>
     );
   }
 
   return (
+    <PageTransition>
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-text-muted">{leagues.length} league{leagues.length !== 1 ? "s" : ""}</p>
@@ -113,10 +120,13 @@ export default function AdminLeaguesPage() {
       </div>
 
       <div className="space-y-2">
+        <StaggerContainer className="space-y-2">
         {leagues.map((league) => (
-          <div
-            key={league.id}
-            className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
+          <StaggerItem key={league.id}>
+          <Card
+            variant="glass"
+            padding="md"
+            className="flex items-center gap-4"
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -143,8 +153,10 @@ export default function AdminLeaguesPage() {
             >
               <Trash2 size={16} />
             </Button>
-          </div>
+          </Card>
+          </StaggerItem>
         ))}
+        </StaggerContainer>
       </div>
 
       <Dialog
@@ -159,5 +171,6 @@ export default function AdminLeaguesPage() {
         </div>
       </Dialog>
     </div>
+    </PageTransition>
   );
 }

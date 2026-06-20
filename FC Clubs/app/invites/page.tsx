@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
 import { CheckCircle2, XCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,13 +69,16 @@ export default function InvitesPage() {
 
   if (loading || loadingInvites) {
     return (
+      <PageTransition>
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+        <Skeleton className="h-8 w-8 rounded-full" />
       </div>
+      </PageTransition>
     );
   }
 
   return (
+    <PageTransition>
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
         <Mail size={24} className="text-pitch-400" />
@@ -82,16 +89,17 @@ export default function InvitesPage() {
       </div>
 
       {invites.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-12 text-center">
+        <Card variant="glass" padding="lg" className="flex flex-col items-center gap-3 text-center">
           <Mail size={40} className="text-text-muted" />
           <p className="text-text-secondary">No pending invites</p>
-        </div>
+        </Card>
       ) : (
-        <div className="space-y-3">
+        <StaggerContainer className="space-y-3">
           {invites.map((invite) => (
-            <div
-              key={invite.id}
-              className="rounded-xl border border-border bg-card p-5"
+            <StaggerItem key={invite.id}>
+            <Card
+              variant="glass"
+              padding="md"
             >
               <div className="flex items-center gap-4">
                 <div
@@ -127,10 +135,12 @@ export default function InvitesPage() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       )}
     </div>
+    </PageTransition>
   );
 }

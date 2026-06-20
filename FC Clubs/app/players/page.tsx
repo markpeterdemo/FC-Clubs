@@ -4,22 +4,24 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { DiscordAvatar } from "@/components/ui/avatar";
+import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  Filter,
   X,
   Send,
-  MessageSquare,
-  Shield,
   ChevronDown,
   UserPlus,
+  Users,
+  SlidersHorizontal,
 } from "lucide-react";
 import { POSITION_GROUPS, type Position } from "@/lib/types";
 
@@ -49,7 +51,7 @@ export default function PlayersPage() {
 
         const [playersRes, clubsRes] = await Promise.all([
           fetch(`/api/players?${params}`),
-          fetch("/api/clubs"),
+          fetch("/api/clubs?all=true"),
         ]);
 
         if (playersRes.ok) {
@@ -70,306 +72,311 @@ export default function PlayersPage() {
     fetchPlayers();
   }, [query, selectedPositions, clubFilter]);
 
+  async function handleInvite() {
+    if (!inviteTarget || !inviteMessage.trim()) return;
+    setSendingInvite(true);
+    try {
+      const res = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: inviteTarget.id, message: inviteMessage }),
+      });
+      if (res.ok) {
+        toast.success("Invite sent!");
+        setInviteTarget(null);
+        setInviteMessage("");
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to send invite");
+      }
+    } catch {
+      toast.error("Failed to send invite");
+    } finally {
+      setSendingInvite(false);
+    }
+  }
+
   function togglePosition(pos: string) {
     setSelectedPositions((prev) =>
       prev.includes(pos) ? prev.filter((p) => p !== pos) : [...prev, pos]
     );
   }
 
-  function toggleGroup(groupLabel: string) {
-    setExpandedGroup((prev) => (prev === groupLabel ? null : groupLabel));
+  const activeFilters = selectedPositions.length + (clubFilter !== "all" ? 1 : 0);
+
+  if (loading || loadingPlayers) {
+    return (
+      <div className="space-y-6 py-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-10 w-full rounded-xl" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  async function handleInvite(playerId: string) {
-    setSendingInvite(true);
-    try {
-      const res = await fetch("/api/invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipient_id: playerId,
-          message: inviteMessage,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to send invite");
-      }
-
-      toast.success("Invite sent!");
-      setInviteTarget(null);
-      setInviteMessage("");
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setSendingInvite(false);
-    }
-  }
-
-  const selectedLabels = selectedPositions.map((p) => p);
+  if (!user) return null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Players</h1>
-          <p className="text-text-secondary">Find and invite players to your club</p>
-        </div>
-        <button
-          onClick={() => setShowFilter(!showFilter)}
-          className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-            showFilter || selectedPositions.length > 0
-              ? "bg-pitch-900/30 text-pitch-400"
-              : "text-text-secondary hover:bg-surface-2"
-          )}
-        >
-          <Filter size={16} />
-          Filters
-          {selectedPositions.length > 0 && (
-            <Badge variant="success" className="ml-1">{selectedPositions.length}</Badge>
-          )}
-        </button>
-      </div>
+    <PageTransition>
+      <StaggerContainer className="space-y-6" staggerDelay={0.04}>
+        <StaggerItem>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Players</h1>
+              <p className="text-text-secondary text-sm mt-0.5">Find and connect with other players</p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowFilter(!showFilter)}
+              className="relative"
+            >
+              <SlidersHorizontal size={14} />
+              Filters
+              {activeFilters > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-pitch-500 text-[10px] font-bold text-white">
+                  {activeFilters}
+                </span>
+              )}
+            </Button>
+          </div>
+        </StaggerItem>
 
-      {/* Search and Filter */}
-      <div className="space-y-4">
-        <Input
-          placeholder="Search by name or club..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-md"
-        />
-
-        {/* Position Filter Dropdown */}
-        {showFilter && (
-          <div className="rounded-xl border border-border bg-card p-4 animate-fade-in">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-text-secondary">Position</span>
-              {selectedPositions.length > 0 && (
-                <button
-                  onClick={() => setSelectedPositions([])}
-                  className="flex items-center gap-1 text-xs text-pitch-400 hover:text-pitch-300"
-                >
-                  <X size={12} />
-                  Clear all
+        {/* Search + Filters */}
+        <StaggerItem>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search players by name..."
+                className="w-full rounded-xl border border-border bg-surface-2/50 pl-9 pr-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-pitch-500/50 focus:outline-none focus:ring-2 focus:ring-pitch-500/15 transition-all duration-200 backdrop-blur-sm"
+              />
+              {query && (
+                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary">
+                  <X size={16} />
                 </button>
               )}
             </div>
 
-            <div className="space-y-1">
-              {POSITION_GROUPS.map((group) => {
-                const isExpanded = expandedGroup === group.label;
-                const groupSelected = group.positions.filter((p) =>
-                  selectedPositions.includes(p)
-                );
-
-                return (
-                  <div key={group.label}>
-                    <button
-                      onClick={() => toggleGroup(group.label)}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-surface-2",
-                        groupSelected.length > 0 && "text-pitch-400"
-                      )}
-                    >
-                      <span className="font-medium">{group.label}</span>
-                      <div className="flex items-center gap-2">
-                        {groupSelected.length > 0 && (
-                          <span className="text-xs text-pitch-400">
-                            {groupSelected.length} selected
-                          </span>
-                        )}
-                        <ChevronDown
-                          size={14}
-                          className={cn(
-                            "text-text-muted transition-transform",
-                            isExpanded && "rotate-180"
-                          )}
-                        />
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="ml-3 flex flex-wrap gap-2 pb-2">
-                        {group.positions.map((pos) => {
-                          const isSelected = selectedPositions.includes(pos);
+            <AnimatePresence>
+              {showFilter && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  className="overflow-hidden"
+                >
+                  <Card variant="glass" padding="sm" className="space-y-4">
+                    {/* Position filter */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Position</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {POSITION_GROUPS.map((group) => {
+                          const hasSelected = group.positions.some((p) => selectedPositions.includes(p));
+                          const isExpanded = expandedGroup === group.label;
                           return (
-                            <button
-                              key={pos}
-                              onClick={() => togglePosition(pos)}
-                              className={cn(
-                                "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                                isSelected
-                                  ? "bg-pitch-600 text-white"
-                                  : "bg-surface-2 text-text-secondary hover:bg-surface-3"
-                              )}
-                            >
-                              {pos}
-                            </button>
+                            <div key={group.label} className="relative">
+                              <button
+                                onClick={() => setExpandedGroup(isExpanded ? null : group.label)}
+                                className={cn(
+                                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-all",
+                                  hasSelected
+                                    ? "bg-pitch-500/10 border-pitch-500/30 text-pitch-400"
+                                    : "bg-surface-2/50 border-border text-text-secondary hover:border-border-light"
+                                )}
+                              >
+                                {group.label}
+                                <ChevronDown size={12} className={cn("transition-transform", isExpanded && "rotate-180")} />
+                              </button>
+                              <AnimatePresence>
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    className="absolute top-full left-0 mt-1 z-10 flex gap-1 flex-wrap p-2 rounded-xl border border-border glass shadow-elevated min-w-[180px]"
+                                  >
+                                    {group.positions.map((pos) => (
+                                      <button
+                                        key={pos}
+                                        onClick={() => togglePosition(pos)}
+                                        className={cn(
+                                          "px-2 py-1 rounded-md text-xs font-medium transition-all",
+                                          selectedPositions.includes(pos)
+                                            ? "bg-pitch-500/20 text-pitch-400"
+                                            : "text-text-secondary hover:bg-surface-2/50"
+                                        )}
+                                      >
+                                        {pos}
+                                      </button>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           );
                         })}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Club filter */}
-            <div className="mt-3 border-t border-border pt-3">
-              <label className="mb-2 block text-sm font-medium text-text-secondary">Club</label>
-              <Select
-                value={clubFilter}
-                onChange={setClubFilter}
-                options={[
-                  { value: "all", label: "All Clubs" },
-                  ...clubs.map((c: any) => ({ value: c.id, label: c.name })),
-                ]}
-              />
-            </div>
-
-            {/* Active filters */}
-            {selectedPositions.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {selectedPositions.map((pos) => (
-                  <button
-                    key={pos}
-                    onClick={() => togglePosition(pos)}
-                    className="flex items-center gap-1 rounded-full bg-pitch-900/30 px-2.5 py-1 text-xs text-pitch-400 hover:bg-pitch-900/50"
-                  >
-                    {pos}
-                    <X size={12} />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Results */}
-      {loadingPlayers ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {players.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Search size={40} className="mb-3 text-text-muted" />
-              <p className="text-text-secondary">No players found</p>
-              <p className="text-sm text-text-muted">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            players.map((player: any) => (
-              <div
-                key={player.user_id}
-                className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-border-light hover:shadow-md"
-              >
-                <div className="flex items-center gap-4">
-                  <DiscordAvatar
-                    discordId={player.discord_id}
-                    avatarHash={player.avatar}
-                    size={44}
-                  />
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={`/profile/${player.user_id}`}
-                        className="font-medium hover:text-pitch-400 transition-colors"
-                      >
-                        {player.global_name || player.username}
-                      </a>
-                      <span className="text-sm text-text-muted">@{player.username}</span>
                     </div>
 
-                    <div className="mt-1 flex items-center gap-2">
-                      <div
-                        className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-white"
-                        style={{ backgroundColor: player.club_color || "#334155" }}
+                    {/* Club filter */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Club</p>
+                      <select
+                        value={clubFilter}
+                        onChange={(e) => setClubFilter(e.target.value)}
+                        className="w-full rounded-xl border border-border bg-surface-2/50 px-3 py-2 text-sm text-text-primary focus:border-pitch-500/50 focus:outline-none focus:ring-2 focus:ring-pitch-500/15 transition-all"
                       >
-                        {player.club_short_name || "?"}
+                        <option value="all">All Clubs</option>
+                        {clubs.map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {(selectedPositions.length > 0 || clubFilter !== "all") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setSelectedPositions([]); setClubFilter("all"); }}
+                        className="text-xs"
+                      >
+                        <X size={12} />
+                        Clear all filters
+                      </Button>
+                    )}
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </StaggerItem>
+
+        {/* Player grid */}
+        <StaggerItem>
+          {players.length === 0 ? (
+            <div className="py-16 text-center">
+              <Users size={36} className="mx-auto mb-3 text-text-muted" />
+              <p className="text-text-muted">No players found</p>
+              <p className="text-xs text-text-muted mt-1">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {players.map((player: any, i: number) => (
+                <motion.div
+                  key={player.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <Card variant="glass" padding="sm" hover className="h-full" onClick={() => router.push(`/profile/${player.id}`)}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <DiscordAvatar
+                          discordId={player.discord_id}
+                          avatarHash={player.avatar}
+                          size={40}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {player.global_name || player.username}
+                          </p>
+                          <p className="text-xs text-text-muted truncate">@{player.username}</p>
+                        </div>
                       </div>
-                      <span className="text-sm text-text-secondary">{player.club_name}</span>
-                      <Badge>{player.position}</Badge>
-                      <Badge variant={player.role === "captain" ? "warning" : "default"}>
-                        {player.role}
+                      <Badge variant={player.club ? "success" : "default"} className="shrink-0">
+                        {player.club?.short_name || "Free Agent"}
                       </Badge>
                     </div>
 
-                    <div className="mt-1 flex items-center gap-3 text-xs text-text-muted">
-                      <span>{player.apps} apps</span>
-                      <span>{player.goals} goals</span>
-                      <span>{player.assists} assists</span>
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      {player.position && <Badge variant="info">{player.position}</Badge>}
+                      {player.club && (
+                        <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                          <div
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: player.club.primary_color }}
+                          />
+                          {player.club.name}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </div>
 
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setInviteTarget(player)}
-                >
-                  <UserPlus size={14} />
-                  Invite
-                </Button>
-              </div>
-            ))
+                    {player.stats && (
+                      <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
+                        <div className="text-center">
+                          <p className="text-xs text-text-muted">Apps</p>
+                          <p className="text-sm font-semibold tabular-nums">{player.stats.appearances || 0}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-text-muted">Goals</p>
+                          <p className="text-sm font-semibold tabular-nums text-pitch-400">{player.stats.goals || 0}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-text-muted">Assists</p>
+                          <p className="text-sm font-semibold tabular-nums text-blue-400">{player.stats.assists || 0}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInviteTarget(player);
+                          setInviteMessage("");
+                        }}
+                      >
+                        <UserPlus size={14} />
+                        Invite
+                      </Button>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           )}
-        </div>
-      )}
+        </StaggerItem>
+      </StaggerContainer>
 
       {/* Invite Dialog */}
       <Dialog
         open={!!inviteTarget}
-        onClose={() => {
-          setInviteTarget(null);
-          setInviteMessage("");
-        }}
+        onClose={() => { setInviteTarget(null); setInviteMessage(""); }}
         title={`Invite ${inviteTarget?.global_name || inviteTarget?.username || ""}`}
       >
-        <p className="mb-4 text-sm text-text-secondary">
-          Send an invite to join your club
-        </p>
-
         <div className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-              Message (optional)
-            </label>
-            <textarea
-              value={inviteMessage}
-              onChange={(e) => setInviteMessage(e.target.value)}
-              placeholder="Hey, we'd love to have you on our team!"
-              className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-pitch-500 focus:outline-none focus:ring-1 focus:ring-pitch-500/50"
-              rows={3}
-            />
-          </div>
-
-          <div className="flex gap-3">
+          <textarea
+            value={inviteMessage}
+            onChange={(e) => setInviteMessage(e.target.value)}
+            placeholder="Write a personal message..."
+            rows={3}
+            className="w-full rounded-xl border border-border bg-surface-2/50 px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-pitch-500/50 focus:outline-none focus:ring-2 focus:ring-pitch-500/15 transition-all resize-none"
+          />
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setInviteTarget(null)}>Cancel</Button>
             <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() => {
-                setInviteTarget(null);
-                setInviteMessage("");
-              }}
+              variant="premium"
+              size="sm"
+              onClick={handleInvite}
+              disabled={!inviteMessage.trim() || sendingInvite}
             >
-              Cancel
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={() => handleInvite(inviteTarget.user_id)}
-              disabled={sendingInvite}
-            >
+              <Send size={14} />
               {sendingInvite ? "Sending..." : "Send Invite"}
             </Button>
           </div>
         </div>
       </Dialog>
-    </div>
+    </PageTransition>
   );
 }

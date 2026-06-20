@@ -5,8 +5,13 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { DiscordAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabPanel } from "@/components/ui/tabs";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Swords, Crosshair, Shield, Trophy, Goal, Eye } from "lucide-react";
+import { motion } from "framer-motion";
+import { Swords, Crosshair, Shield, Trophy, Goal, Eye, Medal } from "lucide-react";
 import Link from "next/link";
 
 type StatTab = "goals" | "assists" | "apps";
@@ -36,117 +41,140 @@ export default function StatsPage() {
     fetchLeaders();
   }, [tab]);
 
-  const tabs: { key: StatTab; label: string; icon: any }[] = [
-    { key: "goals", label: "Top Scorers", icon: Swords },
-    { key: "assists", label: "Most Assists", icon: Crosshair },
-    { key: "apps", label: "Most Appearances", icon: Shield },
-  ];
-
   if (loading) return null;
 
+  const tabConfig = [
+    { id: "goals" as StatTab, label: "Top Scorers", icon: Swords },
+    { id: "assists" as StatTab, label: "Most Assists", icon: Crosshair },
+    { id: "apps" as StatTab, label: "Most Appearances", icon: Eye },
+  ];
+
+  function getStatValue(player: any): number {
+    if (tab === "goals") return player.goals;
+    if (tab === "assists") return player.assists;
+    return player.apps;
+  }
+
+  function getStatLabel(): string {
+    if (tab === "goals") return "goals";
+    if (tab === "assists") return "assists";
+    return "apps";
+  }
+
+  function getPositionBadge(i: number) {
+    if (i === 0) return <Trophy size={18} className="text-gold" />;
+    if (i === 1) return <Medal size={16} className="text-silver" />;
+    if (i === 2) return <Medal size={15} className="text-bronze" />;
+    return <span className="text-sm tabular-nums text-text-muted w-5 text-center">{i + 1}</span>;
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold">Stats</h1>
-        <p className="text-text-secondary">League leaders and player statistics</p>
-      </div>
+    <PageTransition>
+      <StaggerContainer className="space-y-6" staggerDelay={0.05}>
+        <StaggerItem>
+          <div>
+            <h1 className="text-2xl font-bold">Stats</h1>
+            <p className="text-text-secondary text-sm mt-0.5">League leaders and player statistics</p>
+          </div>
+        </StaggerItem>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {tabs.map((t) => {
-          const isActive = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-pitch-900/30 text-pitch-400 border border-pitch-600/30"
-                  : "text-text-secondary hover:bg-surface-2 border border-transparent"
-              )}
-            >
-              <t.icon size={16} />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
+        <StaggerItem>
+          <Tabs
+            tabs={tabConfig.map((t) => ({
+              id: t.id,
+              label: t.label,
+              icon: <t.icon size={16} />,
+            }))}
+            activeTab={tab}
+            onChange={(id) => setTab(id as StatTab)}
+          />
+        </StaggerItem>
 
-      {/* Leaderboard */}
-      {loadingData ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-card">
-          {leaders.length === 0 ? (
-            <div className="py-12 text-center text-text-muted">
-              No stats available yet
+        <StaggerItem>
+          {loadingData ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-2xl" />
+              ))}
+            </div>
+          ) : leaders.length === 0 ? (
+            <div className="py-16 text-center">
+              <Goal size={40} className="mx-auto mb-3 text-text-muted" />
+              <p className="text-text-muted">No stats available yet</p>
+              <p className="text-xs text-text-muted mt-1">Stats will appear once matches are played</p>
             </div>
           ) : (
-            leaders.map((player: any, i: number) => (
-              <Link
-                key={player.user_id}
-                href={`/profile/${player.user_id}`}
-                className={cn(
-                  "flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-2",
-                  i !== leaders.length - 1 && "border-b border-border"
-                )}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Rank */}
-                  <div className="flex w-6 justify-center">
-                    {i === 0 && <Trophy size={18} className="text-gold" />}
-                    {i === 1 && <Trophy size={16} className="text-silver" />}
-                    {i === 2 && <Trophy size={14} className="text-bronze" />}
-                    {i > 2 && (
-                      <span className="text-sm text-text-muted">{i + 1}</span>
-                    )}
-                  </div>
+            <Card variant="glass" padding="none" className="divide-y divide-border/50">
+              {leaders.map((player: any, i: number) => {
+                const statValue = getStatValue(player);
+                const maxValue = getStatValue(leaders[0]);
+                const barWidth = maxValue > 0 ? (statValue / maxValue) * 100 : 0;
+                return (
+                  <Link
+                    key={player.user_id}
+                    href={`/profile/${player.user_id}`}
+                    className="block transition-colors hover:bg-surface-2/30"
+                  >
+                    <div className="relative px-5 py-4 overflow-hidden">
+                      {/* Background bar */}
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${barWidth}%` }}
+                        transition={{ duration: 0.8, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-pitch-500/[0.04] to-pitch-500/[0.02] rounded-r-xl"
+                      />
 
-                  <DiscordAvatar
-                    discordId={player.discord_id}
-                    avatarHash={player.avatar}
-                    size={40}
-                  />
+                      <div className="relative flex items-center justify-between">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="flex w-7 justify-center shrink-0">
+                            {getPositionBadge(i)}
+                          </div>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {player.global_name || player.username}
-                      </span>
-                      <span className="text-sm text-text-muted">@{player.username}</span>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <div
-                        className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-white"
-                        style={{ backgroundColor: player.club_color || "#334155" }}
-                      >
-                        {player.club_short_name || "?"}
+                          <DiscordAvatar
+                            discordId={player.discord_id}
+                            avatarHash={player.avatar}
+                            size={40}
+                          />
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm truncate">
+                                {player.global_name || player.username}
+                              </span>
+                              <span className="text-xs text-text-muted hidden sm:block">@{player.username}</span>
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-2">
+                              <div
+                                className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-white shrink-0"
+                                style={{ backgroundColor: player.club_color || "#334155" }}
+                              >
+                                {player.club_short_name || "?"}
+                              </div>
+                              {player.position && <Badge variant="default" className="text-[10px]">{player.position}</Badge>}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <motion.p
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2 + i * 0.03, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                            className="text-xl font-bold text-pitch-400 tabular-nums"
+                          >
+                            {statValue}
+                          </motion.p>
+                          <p className="text-xs text-text-muted">{getStatLabel()}</p>
+                        </div>
                       </div>
-                      <Badge className="text-[10px]">{player.position}</Badge>
                     </div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-xl font-bold text-pitch-400">
-                    {tab === "goals"
-                      ? player.goals
-                      : tab === "assists"
-                      ? player.assists
-                      : player.apps}
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    {tab === "goals" ? "goals" : tab === "assists" ? "assists" : "apps"}
-                  </p>
-                </div>
-              </Link>
-            ))
+                  </Link>
+                );
+              })}
+            </Card>
           )}
-        </div>
-      )}
-    </div>
+        </StaggerItem>
+      </StaggerContainer>
+    </PageTransition>
   );
 }

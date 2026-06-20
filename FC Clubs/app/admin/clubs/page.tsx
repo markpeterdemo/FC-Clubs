@@ -3,155 +3,107 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog } from "@/components/ui/dialog";
-import { Search, Trash2, Edit3 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
-interface AdminClub {
-  id: string;
-  name: string;
-  short_name: string | null;
-  primary_color: string;
-  visibility: string;
-  description: string | null;
-  member_count: number;
-  created_at: string;
-}
+import { motion } from "framer-motion";
 
 export default function AdminClubsPage() {
-  const [clubs, setClubs] = useState<AdminClub[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [clubs, setClubs] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchClubs();
-  }, [page]);
+  useEffect(() => { fetchClubs(); }, []);
 
   async function fetchClubs() {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page) });
+      const params = new URLSearchParams();
       if (q) params.set("q", q);
       const res = await fetch(`/api/admin/clubs?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setClubs(data.clubs);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
-      }
-    } catch {
-      toast.error("Failed to fetch clubs");
-    } finally {
-      setLoading(false);
-    }
+      if (res.ok) setClubs((await res.json()).clubs);
+    } catch { toast.error("Failed to fetch clubs"); }
+    finally { setLoading(false); }
   }
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    setPage(1);
-    fetchClubs();
-  }
-
-  async function deleteClub(clubId: string, clubName: string) {
-    if (!confirm(`Delete "${clubName}"? This cannot be undone.`)) return;
+  async function deleteClub(id: string) {
+    if (!confirm("Delete this club?")) return;
     try {
-      const res = await fetch(`/api/admin/clubs/${clubId}`, { method: "DELETE" });
-      if (res.ok) {
-        toast.success("Club deleted");
-        await fetchClubs();
-      }
-    } catch {
-      toast.error("Failed to delete club");
-    }
+      const res = await fetch(`/api/admin/clubs/${id}`, { method: "DELETE" });
+      if (res.ok) { toast.success("Club deleted"); fetchClubs(); }
+      else { const d = await res.json(); toast.error(d.error || "Failed"); }
+    } catch { toast.error("Failed to delete club"); }
   }
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSearch} className="flex gap-3">
-        <div className="flex-1">
-          <Input
-            placeholder="Search clubs by name..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        <Button type="submit">
-          <Search size={16} />
-          Search
-        </Button>
-      </form>
-
-      <p className="text-sm text-text-muted">{total} club{total !== 1 ? "s" : ""}</p>
-
-      <div className="space-y-2">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
-          </div>
-        ) : (
-          clubs.map((club) => (
-            <div
-              key={club.id}
-              className="flex items-center gap-4 rounded-lg border border-border bg-card p-4"
-            >
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
-                style={{ backgroundColor: club.primary_color }}
-              >
-                {club.short_name || club.name.slice(0, 3).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{club.name}</span>
-                  <Badge variant={club.visibility === "public" ? "success" : "info"}>
-                    {club.visibility}
-                  </Badge>
-                </div>
-                <p className="text-sm text-text-muted">
-                  {club.member_count} member{club.member_count !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => deleteClub(club.id, club.name)}
-                className="text-red-400"
-              >
-                <Trash2 size={16} />
-                Delete
-              </Button>
+    <PageTransition>
+      <StaggerContainer className="space-y-6" staggerDelay={0.04}>
+        <StaggerItem>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Clubs</h1>
+              <p className="text-text-secondary text-sm mt-0.5">Manage all clubs</p>
             </div>
-          ))
-        )}
-      </div>
+            <span className="text-sm text-text-muted">{clubs.length} clubs</span>
+          </div>
+        </StaggerItem>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-text-muted">
-            Page {page} of {totalPages}
-          </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
-    </div>
+        <StaggerItem>
+          <div className="relative">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Input
+              placeholder="Search clubs..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-9"
+              onKeyDown={(e) => e.key === "Enter" && fetchClubs()}
+            />
+          </div>
+        </StaggerItem>
+
+        <StaggerItem>
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
+            </div>
+          ) : clubs.length === 0 ? (
+            <div className="py-12 text-center text-text-muted">No clubs found</div>
+          ) : (
+            <div className="space-y-2">
+              {clubs.map((club, i) => (
+                <motion.div
+                  key={club.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                >
+                  <Card variant="glass" padding="sm" className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm"
+                        style={{ backgroundColor: club.primary_color || "#334155" }}
+                      >
+                        {club.short_name || club.name.slice(0, 3).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{club.name}</p>
+                        <p className="text-xs text-text-muted">
+                          {club.member_count || 0} members · {club.visibility}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteClub(club.id)} className="text-red-400">
+                      <Trash2 size={16} />
+                    </Button>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </StaggerItem>
+      </StaggerContainer>
+    </PageTransition>
   );
 }

@@ -3,13 +3,17 @@
 import { DiscordAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { PositionSelect } from "@/components/ui/select";
+import { CircularProgress, Progress } from "@/components/ui/progress";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
 import { cn } from "@/lib/utils";
-import { Copy, Check, Calendar, Shield, Swords, Crosshair, Settings, Award } from "lucide-react";
+import { Copy, Check, Calendar, Shield, Swords, Crosshair, Settings, Award, Trophy } from "lucide-react";
 import { BadgeGrid } from "@/components/badge-grid";
 import { useState } from "react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface ProfileCardProps {
   user: {
@@ -55,7 +59,7 @@ export function ProfileCard({ user, club, stats, isOwnProfile }: ProfileCardProp
   const [publicProfile, setPublicProfile] = useState(user.public_profile ?? true);
   const [saving, setSaving] = useState(false);
 
-  const profileUrl = `${window.location.origin}/profile/${user.id}`;
+  const profileUrl = typeof window !== "undefined" ? `${window.location.origin}/profile/${user.id}` : "";
 
   async function saveProfile() {
     setSaving(true);
@@ -84,177 +88,205 @@ export function ProfileCard({ user, club, stats, isOwnProfile }: ProfileCardProp
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const gd = stats ? stats.goals_for - stats.goals_against : 0;
+
   return (
-    <div className="space-y-6">
-      {/* Profile Card */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card">
-        {/* Top gradient accent */}
-        <div
-          className="h-24 rounded-t-xl"
-          style={{
-            background: club
-              ? `linear-gradient(135deg, ${club.primary_color}88, ${club.primary_color}22)`
-              : "linear-gradient(135deg, #334155, #1e293b)",
-          }}
-        />
+    <PageTransition>
+      <StaggerContainer className="space-y-6" staggerDelay={0.05}>
+        {/* Profile Card */}
+        <StaggerItem>
+          <Card variant="glass" padding="none" className="overflow-hidden">
+            <div
+              className="h-28"
+              style={{
+                background: club
+                  ? `linear-gradient(135deg, ${club.primary_color}99, ${club.primary_color}22, var(--color-surface))`
+                  : "linear-gradient(135deg, #33415544, var(--color-surface))",
+              }}
+            />
 
-        <div className="relative px-6 pb-6">
-          {/* Avatar */}
-          <div className="-mt-12 mb-4">
-            <div className="inline-block rounded-full border-4 border-card">
-              <DiscordAvatar
-                discordId={user.discord_id}
-                avatarHash={user.avatar}
-                size={88}
-              />
-            </div>
-          </div>
-
-          {/* Name & Username */}
-          <h1 className="text-2xl font-bold">
-            {user.global_name || user.username}
-          </h1>
-          <p className="text-sm text-text-muted">@{user.username}</p>
-
-          {/* Club Info */}
-          {club && (
-            <div className="mt-4 rounded-lg bg-surface-2 p-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold text-white"
-                  style={{ backgroundColor: club.primary_color || "#22c55e" }}
+            <div className="relative px-6 pb-6">
+              <div className="-mt-14 mb-4">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="inline-block rounded-full border-4 border-surface shadow-xl"
                 >
-                  {club.short_name || club.name.slice(0, 3).toUpperCase()}
-                </div>
+                  <DiscordAvatar
+                    discordId={user.discord_id}
+                    avatarHash={user.avatar}
+                    size={88}
+                  />
+                </motion.div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
-                  <p className="font-semibold">{club.name}</p>
-                  <div className="mt-0.5 flex items-center gap-2">
-                    <Badge
-                      variant={club.role === "captain" ? "warning" : club.role === "manager" ? "info" : "default"}
-                    >
-                      {club.role}
-                    </Badge>
-                    {club.position && <Badge>{club.position}</Badge>}
+                  <h1 className="text-2xl font-bold">
+                    {user.global_name || user.username}
+                  </h1>
+                  <p className="text-sm text-text-muted">@{user.username}</p>
+
+                  <div className="mt-4 flex items-center gap-2 text-xs text-text-muted">
+                    <Calendar size={12} />
+                    Joined {formatDate(user.created_at)}
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Stats */}
-          {stats && (
-            <div className="mt-4">
-              <h3 className="mb-3 text-sm font-semibold text-text-secondary">Player Stats</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Apps", value: stats.apps ?? stats.played, icon: Shield },
-                  { label: "Goals", value: stats.goals ?? 0, icon: Swords },
-                  { label: "Assists", value: stats.assists ?? 0, icon: Crosshair },
-                ].map((s) => (
-                  <div
-                    key={s.label}
-                    className="rounded-lg bg-surface-2 p-3 text-center"
+                {isOwnProfile && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEditing(!editing)}
+                    className="shrink-0"
                   >
-                    <s.icon size={16} className="mx-auto mb-1 text-text-muted" />
-                    <p className="text-xl font-bold">{s.value}</p>
-                    <p className="text-xs text-text-muted">{s.label}</p>
-                  </div>
-                ))}
+                    <Settings size={14} />
+                    {editing ? "Cancel" : "Edit Profile"}
+                  </Button>
+                )}
               </div>
 
-              {/* Club Record */}
-              <div className="mt-3 rounded-lg bg-surface-2 p-3">
-                <p className="text-xs text-text-muted mb-1">Club Record This Season</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-pitch-400">{stats.wins}W</span>
-                  <span className="text-text-muted">{stats.draws}D</span>
-                  <span className="text-red-400">{stats.losses}L</span>
-                  <span className="text-text-secondary">
-                    GD {stats.goals_for - stats.goals_against > 0
-                      ? `+${stats.goals_for - stats.goals_against}`
-                      : stats.goals_for - stats.goals_against}
-                  </span>
+              {club && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="mt-5 rounded-xl bg-surface-2/50 border border-border/50 p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold text-white shadow-md"
+                      style={{ backgroundColor: club.primary_color || "#22c55e" }}
+                    >
+                      {club.short_name || club.name.slice(0, 3).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{club.name}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <Badge variant={club.role === "captain" ? "warning" : club.role === "manager" ? "info" : "success"}>
+                          {club.role}
+                        </Badge>
+                        {club.position && <Badge variant="default">{club.position}</Badge>}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </Card>
+        </StaggerItem>
+
+        {/* Stats */}
+        {stats && (
+          <StaggerItem>
+            <Card variant="elevated" padding="md">
+              <div className="flex items-center gap-4 mb-5">
+                {stats.apps !== undefined && (
+                  <CircularProgress
+                    value={stats.goals ?? 0}
+                    max={Math.max(stats.apps, 1)}
+                    size={64}
+                    strokeWidth={5}
+                    label="Goal Ratio"
+                  />
+                )}
+                <div className="flex-1 grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Apps", value: stats.apps ?? stats.played, icon: Shield, color: "" },
+                    { label: "Goals", value: stats.goals ?? 0, icon: Swords, color: "text-pitch-400" },
+                    { label: "Assists", value: stats.assists ?? 0, icon: Crosshair, color: "text-blue-400" },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-xl bg-surface-2/50 border border-border/50 p-3 text-center transition-all hover:bg-surface-2">
+                      <s.icon size={16} className={cn("mx-auto mb-1", s.color || "text-text-muted")} />
+                      <motion.p
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className={cn("text-xl font-bold tabular-nums", s.color)}
+                      >
+                        {s.value}
+                      </motion.p>
+                      <p className="text-xs text-text-muted">{s.label}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Badges */}
-          <BadgeGrid userId={user.id} className="mt-4" />
-
-          {/* Member since */}
-          <div className="mt-4 flex items-center gap-2 text-xs text-text-muted">
-            <Calendar size={12} />
-            Joined {formatDate(user.created_at)}
-          </div>
-
-          {isOwnProfile && !editing && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-4 w-full"
-              onClick={() => setEditing(true)}
-            >
-              <Settings size={14} />
-              Edit Profile
-            </Button>
-          )}
-
-          {isOwnProfile && editing && (
-            <div className="mt-4 space-y-4 rounded-lg border border-border bg-surface-2 p-4">
-              <h4 className="text-sm font-semibold">Profile Settings</h4>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-                  Position
-                </label>
-                <PositionSelect value={position} onChange={setPosition} />
+              <div className="border-t border-border pt-4">
+                <p className="text-xs font-medium text-text-muted mb-2">Club Record</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="text-pitch-400 font-medium">{stats.wins}W</span>
+                    <span className="text-text-muted">{stats.draws}D</span>
+                    <span className="text-red-400 font-medium">{stats.losses}L</span>
+                    <span className={cn("font-semibold tabular-nums", gd > 0 ? "text-pitch-400" : gd < 0 ? "text-red-400" : "")}>
+                      GD {gd > 0 ? `+${gd}` : gd}
+                    </span>
+                  </div>
+                  <Progress
+                    value={stats.played ? (stats.wins / stats.played) * 100 : 0}
+                    variant="success"
+                    size="sm"
+                    className="flex-1 max-w-[120px]"
+                    showLabel
+                    label="Win Rate"
+                  />
+                </div>
               </div>
-              <label className="flex items-center gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={publicProfile}
-                  onChange={(e) => setPublicProfile(e.target.checked)}
-                  className="h-4 w-4 rounded border-border bg-surface-3 accent-pitch-500"
-                />
-                Public profile
-              </label>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={saveProfile} disabled={saving}>
-                  {saving ? "Saving..." : "Save"}
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setEditing(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Share Profile Button */}
-      <Button
-        variant="secondary"
-        className="w-full"
-        onClick={copyProfileLink}
-      >
-        {copied ? (
-          <>
-            <Check size={16} className="text-pitch-400" />
-            Copied!
-          </>
-        ) : (
-          <>
-            <Copy size={16} />
-            Copy Profile Link
-          </>
+            </Card>
+          </StaggerItem>
         )}
-      </Button>
 
-      {copied && (
-        <p className="text-center text-sm text-pitch-400 animate-fade-in">
-          Profile link copied — paste it anywhere to share!
-        </p>
-      )}
-    </div>
+        {/* Badges */}
+        <StaggerItem>
+          <BadgeGrid userId={user.id} />
+        </StaggerItem>
+
+        {/* Edit Profile */}
+        {isOwnProfile && editing && (
+          <StaggerItem>
+            <Card variant="glass" padding="md">
+              <h4 className="text-sm font-semibold mb-4">Profile Settings</h4>
+              <div className="space-y-4">
+                <PositionSelect value={position} onChange={setPosition} label="Position" />
+                <label className="flex items-center gap-3 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={publicProfile}
+                    onChange={(e) => setPublicProfile(e.target.checked)}
+                    className="h-4 w-4 rounded border-border bg-surface-3 accent-pitch-500"
+                  />
+                  Public profile
+                </label>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="premium" onClick={saveProfile} disabled={saving}>
+                    {saving ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setEditing(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </StaggerItem>
+        )}
+
+        {/* Share */}
+        <StaggerItem>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={copyProfileLink}
+          >
+            {copied ? (
+              <><Check size={16} className="text-pitch-400" /> Copied!</>
+            ) : (
+              <><Copy size={16} /> Copy Profile Link</>
+            )}
+          </Button>
+        </StaggerItem>
+      </StaggerContainer>
+    </PageTransition>
   );
 }

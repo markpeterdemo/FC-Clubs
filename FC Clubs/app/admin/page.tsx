@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Users, Shield, Swords, CheckCircle2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -25,8 +29,10 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-500 border-t-transparent" />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-2xl" />
+        ))}
       </div>
     );
   }
@@ -39,18 +45,38 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {cards.map((card) => (
-          <div key={card.label} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2">
-              <card.icon size={18} className={card.color} />
-              <span className="text-sm text-text-muted">{card.label}</span>
-            </div>
-            <p className={`mt-2 text-3xl font-bold ${card.color}`}>{card.value}</p>
+    <PageTransition>
+      <StaggerContainer className="space-y-6" staggerDelay={0.06}>
+        <StaggerItem>
+          <div>
+            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <p className="text-text-secondary text-sm mt-0.5">Platform overview</p>
           </div>
-        ))}
-      </div>
-    </div>
+        </StaggerItem>
+
+        <StaggerItem>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {cards.map((card) => (
+              <Card key={card.label} variant="glass" padding="md">
+                <div className="flex items-center gap-2.5">
+                  <div className="rounded-xl bg-surface-2/50 p-2.5">
+                    <card.icon size={18} className={card.color} />
+                  </div>
+                  <span className="text-sm text-text-muted">{card.label}</span>
+                </div>
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className={`mt-3 text-3xl font-bold tabular-nums ${card.color}`}
+                >
+                  {card.value}
+                </motion.p>
+              </Card>
+            ))}
+          </div>
+        </StaggerItem>
+      </StaggerContainer>
+    </PageTransition>
   );
 }
