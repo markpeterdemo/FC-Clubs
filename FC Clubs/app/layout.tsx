@@ -1,15 +1,22 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from "next"
+import { Toaster } from "@/components/ui/sonner"
+import { Providers } from "@/components/providers"
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Matchday API",
-  description: "Matchday Football League API",
-};
+  title: "Matchday FC",
+  description: "Football League Management Platform",
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="scrollbar-thin">
+        <Providers>
+          {children}
+        </Providers>
+        <Toaster />
+      </body>
     </html>
-  );
+  )
 }
